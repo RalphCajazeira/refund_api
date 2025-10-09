@@ -35,7 +35,7 @@ class UsersController {
       data: { name, email, password: hashedPassword, role },
     })
 
-    res.status(201).json({ message: "Usuário criado com sucesso!" })
+    res.status(201).json()
   }
 }
 

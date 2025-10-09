@@ -13,7 +13,7 @@ class UsersController {
       password: z
         .string()
         .min(6, { message: "A senha deve ter no mínimo 6 dígitos" }),
-      role: z.enum([UserRole.employee]),
+      role: z.enum([UserRole.employee, UserRole.manager]),
     })
 
     const data = bodySchema.parse(req.body)

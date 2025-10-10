@@ -1,16 +1,20 @@
-import { prisma } from "@/database/prisma"
-import { AppError } from "@/utils/AppError"
-import { compare } from "bcrypt"
 import type { Request, Response } from "express"
-import z from "zod"
+import { AppError } from "@/utils/AppError"
+import { authConfig } from "@/configs/auth"
+import { prisma } from "@/database/prisma"
+import { sign } from "jsonwebtoken"
+import { compare } from "bcrypt"
+import { z } from "zod"
 
 class SessionsController {
   async create(req: Request, res: Response) {
     const bodySchema = z.object({
-      email: z.email({ message: "Digite um email válido" }),
-      password: z
+      email: z
         .string()
-        .min(6, { message: "A senha deve ter no mínimo 6 dígitos" }),
+        .trim()
+        .toLowerCase()
+        .pipe(z.email({ message: "Digite um email válido" })),
+      password: z.string().trim(),
     })
 
     const { email, password } = bodySchema.parse(req.body)
@@ -30,9 +34,16 @@ class SessionsController {
       throw new AppError("Usuário ou senha incorretos", 401)
     }
 
+    const { secret, expiresIn } = authConfig.jwt
+
+    const token = sign({ role: user.role }, secret, {
+      subject: user.id,
+      expiresIn,
+    })
+
     const { password: _, ...userWithoutPassword } = user
 
-    res.json({ userWithoutPassword })
+    res.json({ token, user: userWithoutPassword })
   }
 }
 

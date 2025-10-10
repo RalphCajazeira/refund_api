@@ -7,7 +7,7 @@ import { compare } from "bcrypt"
 import { z } from "zod"
 
 class SessionsController {
-  async create(req: Request, res: Response) {
+  async create(request: Request, response: Response) {
     const bodySchema = z.object({
       email: z
         .string()
@@ -17,7 +17,7 @@ class SessionsController {
       password: z.string().trim(),
     })
 
-    const { email, password } = bodySchema.parse(req.body)
+    const { email, password } = bodySchema.parse(request.body)
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -43,7 +43,7 @@ class SessionsController {
 
     const { password: _, ...userWithoutPassword } = user
 
-    res.json({ token, user: userWithoutPassword })
+    response.json({ token, user: userWithoutPassword })
   }
 }
 

@@ -6,7 +6,7 @@ import { AppError } from "@/utils/AppError"
 import { hash } from "bcrypt"
 
 class UsersController {
-  async create(req: Request, res: Response) {
+  async create(request: Request, response: Response) {
     const bodySchema = z.object({
       name: z
         .string()
@@ -19,7 +19,7 @@ class UsersController {
       role: z.enum([UserRole.employee, UserRole.manager]),
     })
 
-    const { name, email, password, role } = bodySchema.parse(req.body)
+    const { name, email, password, role } = bodySchema.parse(request.body)
 
     const userWithSameEmail = await prisma.user.findFirst({
       where: { email },
@@ -35,7 +35,7 @@ class UsersController {
       data: { name, email, password: hashedPassword, role },
     })
 
-    res.status(201).json()
+    response.status(201).json()
   }
 }
 

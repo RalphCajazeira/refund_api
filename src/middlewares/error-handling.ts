@@ -1,6 +1,6 @@
 import { AppError } from "@/utils/AppError"
 import { ErrorRequestHandler } from "express"
-import z, { ZodError } from "zod"
+import { z, ZodError } from "zod"
 
 export const errorHandling: ErrorRequestHandler = (
   error,
@@ -21,6 +21,10 @@ export const errorHandling: ErrorRequestHandler = (
     return
   }
 
-  response.status(500).json({ message: error.message })
-  return
+  if (process.env.NODE_ENV === "development") {
+    response.status(500).json({ message: error.message })
+    return
+  }
+
+  response.status(500).json({ message: "Internal server error" })
 }

@@ -1,8 +1,8 @@
 import { prisma } from "@/database/prisma"
+import { AppError } from "@/utils/AppError"
 import { compare } from "bcrypt"
 import type { Request, Response } from "express"
 import z from "zod"
-import id from "zod/v4/locales/id.js"
 
 class SessionsController {
   async create(req: Request, res: Response) {
@@ -20,13 +20,19 @@ class SessionsController {
       select: { id: true, email: true, password: true, role: true },
     })
 
-    if (!user) throw new Error("Usuário ou senha incorretos")
+    if (!user) {
+      throw new AppError("Usuário ou senha incorretos", 401)
+    }
 
     const passwordMatch = await compare(password, user.password)
 
-    if (!passwordMatch) throw new Error("Usuário ou senha incorretos")
+    if (!passwordMatch) {
+      throw new AppError("Usuário ou senha incorretos", 401)
+    }
 
-    res.json({ user })
+    const { password: _, ...userWithoutPassword } = user
+
+    res.json({ userWithoutPassword })
   }
 }
 

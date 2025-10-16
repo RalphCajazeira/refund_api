@@ -16,7 +16,7 @@ class UsersController {
       password: z
         .string()
         .min(6, { message: "A senha deve ter no mínimo 6 dígitos" }),
-      role: z.enum([UserRole.employee, UserRole.manager]),
+      role: z.enum(Object.values(UserRole) as [UserRole, ...UserRole[]]),
     })
 
     const { name, email, password, role } = bodySchema.parse(request.body)

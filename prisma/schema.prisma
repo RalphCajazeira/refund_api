@@ -11,6 +11,7 @@ datasource db {
 enum UserRole {
   employee
   manager
+  admin
 }
 
 enum Category {
@@ -22,9 +23,9 @@ enum Category {
 }
 
 model User {
-  id String @id @default(uuid())
-  name String
-  email String @unique
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
   password String
 
   role UserRole @default(employee)
@@ -38,14 +39,14 @@ model User {
 }
 
 model Refunds {
-  id String @id @default(uuid())
-  name String
-  amount Float
+  id       String   @id @default(uuid())
+  name     String
+  amount   Float
   category Category
   filename String
 
   userId String @map("user_id")
-  user User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

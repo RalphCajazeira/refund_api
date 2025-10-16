@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import { AppError } from "@/utils/AppError"
 import { prisma } from "@/database/prisma"
-import { Category } from "@prisma/client"
+import { Category, UserRole } from "@prisma/client"
 import { z } from "zod"
 
 class RefundsController {
@@ -33,6 +33,30 @@ class RefundsController {
     })
 
     response.status(201).json(refund)
+  }
+
+  async list(request: Request, response: Response) {
+    const { id, role } = request.user || {}
+
+    if (!id) {
+      throw new AppError("Não autorizado", 401)
+    }
+
+    if (role === UserRole.manager || role === UserRole.admin) {
+      const refunds = await prisma.refunds.findMany({
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+      return response.json(refunds)
+    }
+
+    const refunds = await prisma.refunds.findMany({
+      where: {
+        userId: id,
+      },
+    })
+    return response.json(refunds)
   }
 }
 

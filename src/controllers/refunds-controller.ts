@@ -84,6 +84,41 @@ class RefundsController {
 
     return response.json({ refunds, pagination })
   }
+
+  async show(request: Request, response: Response) {
+    const { id: user_id, role } = request.user || {}
+
+    const paramsSchema = z.object({
+      id: z.uuid(),
+    })
+
+    const { id } = paramsSchema.parse(request.params)
+
+    if (!user_id) throw new AppError("Não autorizado", 401)
+
+    const isManager = role === UserRole.manager || role === UserRole.admin
+
+    // 1) Busca o refund pelo id para diferenciar "não encontrado" de "não autorizado"
+    const refund = await prisma.refunds.findUnique({
+      where: { id },
+      include: isManager
+        ? { user: { select: { name: true, email: true } } }
+        : undefined,
+    })
+
+    // 2) Se não existir, 404
+    if (!refund) {
+      throw new AppError("Refund não encontrado", 404)
+    }
+
+    // 3) Se não for manager/admin, só pode ver se for o dono
+    if (!isManager && refund.userId !== user_id) {
+      throw new AppError("Não autorizado", 401) // (opcionalmente use 403)
+    }
+
+    // 4) Autorizado → retorna
+    return response.json(refund)
+  }
 }
 
 export { RefundsController }

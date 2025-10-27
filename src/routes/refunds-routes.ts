@@ -12,14 +12,14 @@ const ALL_ROLES = Object.values(UserRole) as UserRole[]
 
 refundsRoutes.post(
   "/",
-  verifyUserAuthorization([UserRole.employee]),
+  verifyUserAuthorization([UserRole.employee, UserRole.admin]),
   refundsController.create
 )
 
 refundsRoutes.get(
   "/",
   verifyUserAuthorization(ALL_ROLES),
-  refundsController.list
+  refundsController.index
 )
 
 export { refundsRoutes }

@@ -4,6 +4,11 @@ import { prisma } from "@/database/prisma"
 import { Category, UserRole } from "@prisma/client"
 import { z } from "zod"
 
+function buildPagination(totalRecords: number, page: number, perPage: number) {
+  const totalPages = Math.max(1, Math.ceil(totalRecords / perPage))
+  return { page, perPage, totalRecords, totalPages }
+}
+
 class RefundsController {
   async create(request: Request, response: Response) {
     const bodySchema = z.object({
@@ -35,28 +40,49 @@ class RefundsController {
     response.status(201).json(refund)
   }
 
-  async list(request: Request, response: Response) {
+  async index(request: Request, response: Response) {
     const { id, role } = request.user || {}
 
-    if (!id) {
-      throw new AppError("Não autorizado", 401)
-    }
-
-    if (role === UserRole.manager || role === UserRole.admin) {
-      const refunds = await prisma.refunds.findMany({
-        include: {
-          user: { select: { name: true, email: true } },
-        },
-      })
-      return response.json(refunds)
-    }
-
-    const refunds = await prisma.refunds.findMany({
-      where: {
-        userId: id,
-      },
+    const querySchema = z.object({
+      name: z.string().optional().default(""),
+      page: z.coerce.number().default(1),
+      perPage: z.coerce.number().default(10),
     })
-    return response.json(refunds)
+
+    const { name, page, perPage } = querySchema.parse(request.query)
+    const skip = (page - 1) * perPage
+
+    if (!id) throw new AppError("Não autorizado", 401)
+
+    // Monta o filtro base conforme o papel do usuário
+    const isManager = role === UserRole.manager || role === UserRole.admin
+
+    // where para consultas
+    const where = isManager
+      ? name?.trim()
+        ? { user: { name: { contains: name.trim() } } }
+        : {} // sem filtro por nome
+      : { userId: id }
+
+    // include somente para manager/admin
+    const include = isManager
+      ? { user: { select: { name: true, email: true } } }
+      : undefined
+
+    const [refunds, totalRecords] = await Promise.all([
+      prisma.refunds.findMany({
+        skip,
+        take: perPage,
+        where,
+        include,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.refunds.count({ where }),
+    ])
+
+    const pagination = buildPagination(totalRecords, page, perPage)
+
+    return response.json({ refunds, pagination })
   }
 }
 
